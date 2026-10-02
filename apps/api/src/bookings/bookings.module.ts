@@ -2,12 +2,12 @@ import { Module } from "@nestjs/common";
 import { BookingsController } from "./bookings.controller.js";
 import { BookingsService } from "./bookings.service.js";
 import { PrismaService } from "../prisma.service.js";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
+import { AuthModule } from "../auth/auth.module.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [AuthModule, NotificationsModule],
   controllers: [BookingsController],
-  providers: [BookingsService, PrismaService, JwtAuthGuard],
+  providers: [BookingsService, PrismaService],
 })
 export class BookingsModule {}
