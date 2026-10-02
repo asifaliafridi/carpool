@@ -23,20 +23,39 @@ type Ride = {
 export default function RideDetailsPage() {
   const params = useParams<{ id: string }>();
   const [ride, setRide] = useState<Ride | null>(null);
-  const [error, setError] = useState("");
+  const [seats, setSeats] = useState(1);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
-    apiRequest<Ride>(`/rides/${params.id}`).then(setRide).catch(err => setError(err instanceof Error ? err.message : "Ride not found."));
+    apiRequest<Ride>(`/rides/${params.id}`).then(setRide).catch(err => setMessage(err instanceof Error ? err.message : "Ride not found."));
   }, [params.id]);
+
+  async function requestBooking() {
+    const token = localStorage.getItem("carpool_access_token");
+    if (!token) { window.location.href = `/login?redirect=/rides/${params.id}`; return; }
+    setLoading(true);
+    setMessage("");
+    try {
+      await apiRequest("/bookings", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rideId: params.id, seats }),
+      });
+      setMessage("Booking request sent. The driver will confirm your seats.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Unable to request this ride.");
+    } finally { setLoading(false); }
+  }
 
   return (
     <>
       <Navbar />
       <main className="page">
         <p><Link href="/find" className="textLink">← Back to rides</Link></p>
-        {error && <section className="card"><p className="message">{error}</p></section>}
-        {!ride && !error && <p className="message">Loading ride...</p>}
+        {message && !ride && <section className="card"><p className="message">{message}</p></section>}
+        {!ride && !message && <p className="message">Loading ride...</p>}
         {ride && (
           <>
             <section className="hero">
@@ -50,7 +69,12 @@ export default function RideDetailsPage() {
               <div className="profileRow"><span>Driver</span><strong>{ride.driver?.name ?? "—"}</strong></div>
               <div className="profileRow"><span>Vehicle</span><strong>{ride.vehicle ? `${ride.vehicle.make} ${ride.vehicle.model}` : "—"}</strong></div>
               {ride.notes && <div className="profileRow"><span>Notes</span><strong>{ride.notes}</strong></div>}
-              <p className="message">Booking will be available once the booking flow is connected.</p>
+              <div className="bookingBox">
+                <span className="sectionLabel">BOOK THIS RIDE</span>
+                <label>Seats<input type="number" min="1" max={ride.availableSeats} value={seats} onChange={e => setSeats(Number(e.target.value))} /></label>
+                <button disabled={loading || ride.availableSeats < 1} onClick={requestBooking}>{loading ? "Sending request..." : "Request booking"} <span>→</span></button>
+                {message && <p className="message">{message}</p>}
+              </div>
             </section>
           </>
         )}
