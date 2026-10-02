@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma.service.js";
 import { createHash, randomInt, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 
-type SignupInput = { name: string; phone: string; password: string; email?: string };
+type SignupInput = { name: string; phone: string; password: string; email?: string; userType: "DRIVER" | "RIDER" | "BOTH" };
 type LoginInput = { phone: string; password: string };
 type OtpInput = { phone: string; otp: string };
 
@@ -19,8 +19,8 @@ export class AuthService {
 
     const passwordHash = this.hashPassword(input.password);
     const user = await this.prisma.user.create({
-      data: { name: input.name.trim(), phone, email: input.email?.trim() || undefined, passwordHash },
-      select: { id: true, name: true, phone: true, email: true, role: true, isVerified: true },
+      data: { name: input.name.trim(), phone, email: input.email?.trim() || undefined, passwordHash, userType: input.userType },
+      select: { id: true, name: true, phone: true, email: true, role: true, userType: true, isVerified: true },
     });
 
     const otp = String(randomInt(100000, 1000000));
@@ -39,7 +39,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { phone: input.phone.trim() } });
     if (!user || !this.verifyPassword(input.password, user.passwordHash)) throw new UnauthorizedException("Invalid mobile number or password");
     if (!user.isVerified) return { message: "Mobile number is not verified", requiresVerification: true };
-    return this.issueTokens(user.id, user.phone, user.role);
+    return this.issueTokens(user.id, user.phone, user.role, user.userType);
   }
 
   async verifyOtp(input: OtpInput) {
@@ -58,7 +58,7 @@ export class AuthService {
       select: { id: true, name: true, phone: true, email: true, role: true, isVerified: true },
     });
     await this.prisma.otpCode.delete({ where: { id: record.id } });
-    return { message: "Mobile number verified", user: updated, ...(await this.issueTokens(updated.id, updated.phone, updated.role)) };
+    return { message: "Mobile number verified", user: updated, ...(await this.issueTokens(updated.id, updated.phone, updated.role, updated.userType)) };
   }
 
   async refresh(token: string) {
@@ -77,8 +77,12 @@ export class AuthService {
     return { message: "Logged out successfully" };
   }
 
-  private async issueTokens(userId: string, phone: string, role: string) {
-    const payload = { sub: userId, phone, role };
+  async updateUserType(userId: string, userType: "DRIVER" | "RIDER" | "BOTH") {
+    return this.prisma.user.update({ where: { id: userId }, data: { userType }, select: { id: true, userType: true } });
+  }
+
+  private async issueTokens(userId: string, phone: string, role: string, userType: string) {
+    const payload = { sub: userId, phone, role, userType };
     const accessToken = await this.jwtService.signAsync(payload, { expiresIn: "15m" });
     const refreshToken = await this.jwtService.signAsync(payload, { expiresIn: "30d" });
     await this.prisma.refreshToken.create({ data: { userId, tokenHash: this.hashToken(refreshToken), expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60_000) } });
