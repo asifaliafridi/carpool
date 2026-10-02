@@ -50,4 +50,10 @@ export class RidesController {
   create(@Req() request: AuthenticatedRequest, @Body() dto: CreateRideDto) {
     return this.ridesService.createRide(request.user.sub, dto);
   }
+
+  @Post(":id/status")
+  @UseGuards(JwtAuthGuard)
+  updateStatus(@Req() request: AuthenticatedRequest, @Param("id") id: string, @Body() body: { status: "CANCELLED" }) {
+    return this.ridesService.cancelRide(request.user.sub, id);
+  }
 }
