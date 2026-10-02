@@ -8,6 +8,7 @@ const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/find", label: "Find a ride" },
   { href: "/", label: "Publish a ride" },
+  { href: "/rides", label: "My rides" },
   { href: "/bookings", label: "My bookings" },
   { href: "/vehicles", label: "My vehicles" },
 ];
