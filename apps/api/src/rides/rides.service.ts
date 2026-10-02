@@ -55,13 +55,7 @@ export class RidesService {
       throw new BadRequestException("Destination city and area are required");
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: userId },
-        data: { role: "DRIVER" },
-      });
-
-      return tx.ride.create({
+    return this.prisma.ride.create({
         data: {
           driverId: userId,
           vehicleId: vehicle.id,
@@ -87,7 +81,6 @@ export class RidesService {
           },
         },
       });
-    });
   }
 
   async searchRides(dto: SearchRidesDto) {
