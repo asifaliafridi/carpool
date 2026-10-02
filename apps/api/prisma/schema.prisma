@@ -13,6 +13,12 @@ enum UserRole {
   ADMIN
 }
 
+enum UserType {
+  DRIVER
+  RIDER
+  BOTH
+}
+
 enum RideStatus {
   ACTIVE
   FULL
@@ -34,6 +40,7 @@ model User {
   passwordHash String
   phone        String    @unique
   role         UserRole  @default(PASSENGER)
+  userType     UserType  @default(RIDER)
   avatarUrl    String?
   isVerified   Boolean   @default(false)
   createdAt    DateTime  @default(now())
