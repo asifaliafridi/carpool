@@ -5,7 +5,8 @@ import { FormEvent, useState } from "react";
 import { apiRequest } from "../../lib/api";
 
 type SignupResponse = {
-  verification?: { otp?: string; expiresInSeconds: number };
+  developmentOtp?: string;
+  verification?: { expiresInSeconds: number };
 };
 
 export default function SignupPage() {
@@ -44,8 +45,8 @@ export default function SignupPage() {
       });
 
       const params = new URLSearchParams({ phone });
-      if (result.verification?.otp) {
-        params.set("devOtp", result.verification.otp);
+      if (result.developmentOtp) {
+        params.set("devOtp", result.developmentOtp);
       }
       window.location.href = `/verify?${params.toString()}`;
     } catch (err) {
