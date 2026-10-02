@@ -11,6 +11,8 @@ type Me = { userId: string; name?: string; email?: string | null; phone: string;
 const actions = [
   { href: "/find", title: "Find a ride", text: "Search available rides by route, date and seats.", icon: "→" },
   { href: "/", title: "Publish a ride", text: "Share your route and offer seats to other riders.", icon: "+" },
+  { href: "/rides", title: "My rides", text: "Manage published rides and handle rider booking requests.", icon: "↗" },
+  { href: "/bookings", title: "My bookings", text: "Track your ride requests, confirmations and cancellations.", icon: "✓" },
   { href: "/vehicles", title: "My vehicles", text: "Add and manage the vehicles you use for rides.", icon: "▣" },
   { href: "/profile", title: "Profile & mode", text: "Update your account and switch between Rider and Driver.", icon: "○" },
 ];
@@ -18,7 +20,6 @@ const actions = [
 export default function DashboardPage() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("carpool_access_token");
@@ -28,7 +29,7 @@ export default function DashboardPage() {
       .catch(() => { localStorage.removeItem("carpool_access_token"); router.replace("/login"); });
   }, [router]);
 
-  if (!me) return <main className="page"><p className="message">{error || "Loading dashboard..."}</p></main>;
+  if (!me) return <main className="page"><p className="message">Loading dashboard...</p></main>;
 
   return (
     <>
@@ -40,7 +41,6 @@ export default function DashboardPage() {
           <p>Manage your rides, find new journeys and keep your travel profile up to date.</p>
           <span className="modeBadge">{me.userType === "BOTH" ? "Driver + Rider" : me.userType === "DRIVER" ? "Driver" : "Rider"}</span>
         </section>
-
         <section className="dashboardGrid">
           {actions.map((action) => (
             <Link href={action.href} key={action.href} className="actionCard">
@@ -50,11 +50,6 @@ export default function DashboardPage() {
               <span className="actionArrow">Open →</span>
             </Link>
           ))}
-        </section>
-
-        <section className="dashboardStrip">
-          <div><span className="sectionLabel">NEXT</span><h2>Bookings and ride history</h2><p>Booking management will be connected after the ride-booking flow is added.</p></div>
-          <span className="comingSoon">Coming next</span>
         </section>
       </main>
     </>
