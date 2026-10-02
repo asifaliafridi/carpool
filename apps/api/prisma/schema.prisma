@@ -50,6 +50,7 @@ model User {
   rides        Ride[]    @relation("DriverRides")
   bookings     Booking[] @relation("PassengerBookings")
   refreshTokens RefreshToken[]
+  notifications Notification[]
 }
 
 model Vehicle {
@@ -118,6 +119,20 @@ model Booking {
 
   @@unique([rideId, passengerId])
   @@index([passengerId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
 }
 
 model OtpCode {
