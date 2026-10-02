@@ -20,7 +20,8 @@
     "dotenv": "latest",
     "pg": "latest",
     "reflect-metadata": "latest",
-    "rxjs": "latest"
+    "rxjs": "latest",
+    "@nestjs/jwt": "latest"
   },
   "devDependencies": {
     "@nestjs/cli": "latest",
