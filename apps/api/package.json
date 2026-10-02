@@ -34,6 +34,6 @@
     "@types/node": "latest",
     "@types/pg": "latest",
     "prisma": "^7",
-    "typescript": "latest"
+    "typescript": "^6"
   }
 }
