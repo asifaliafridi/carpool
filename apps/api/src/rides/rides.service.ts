@@ -7,10 +7,11 @@ import {
 import { PrismaService } from "../prisma.service.js";
 import { CreateRideDto } from "./dto/create-ride.dto.js";
 import { SearchRidesDto } from "./dto/search-rides.dto.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
 export class RidesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly notifications: NotificationsService) {}
 
   private async completePastRides() {
     const rides = await this.prisma.ride.findMany({
@@ -164,7 +165,7 @@ export class RidesService {
 
   async cancelRide(userId: string, rideId: string) {
     await this.completePastRides();
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const ride = await tx.ride.findUnique({
         where: { id: rideId },
         include: { bookings: { select: { id: true, status: true } } },
@@ -186,6 +187,22 @@ export class RidesService {
         include: { vehicle: true },
       });
     });
+
+    const passengerIds = (await this.prisma.booking.findMany({
+      where: { rideId, status: "CANCELLED" },
+      select: { passengerId: true },
+    })).map((booking) => booking.passengerId);
+
+    await Promise.all([...new Set(passengerIds)].map((passengerId) =>
+      this.notifications.create(
+        passengerId,
+        "RIDE_CANCELLED",
+        "Ride cancelled",
+        "The driver cancelled this ride. Your booking has also been cancelled.",
+      ),
+    ));
+
+    return result;
   }
 
   async createVehicle(
