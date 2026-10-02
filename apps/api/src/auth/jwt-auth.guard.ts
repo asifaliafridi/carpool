@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import type { Request } from "express";
 
-export type AuthenticatedRequest = Request & {
+export type AuthenticatedRequest = {
+  headers: { authorization?: string };
   user: { sub: string; phone: string; role: string; userType: string };
 };
 
