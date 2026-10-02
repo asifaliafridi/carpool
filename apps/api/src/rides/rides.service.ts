@@ -47,12 +47,12 @@ export class RidesService {
       throw new BadRequestException("Price per seat must be a valid non-negative amount");
     }
 
-    if (!dto.originCity?.trim() || !dto.originArea?.trim() || !dto.origin?.trim()) {
-      throw new BadRequestException("Origin city, area and pickup location are required");
+    if (!dto.originCity?.trim() || !dto.originArea?.trim()) {
+      throw new BadRequestException("Origin city and area are required");
     }
 
-    if (!dto.destinationCity?.trim() || !dto.destinationArea?.trim() || !dto.destination?.trim()) {
-      throw new BadRequestException("Destination city, area and drop-off location are required");
+    if (!dto.destinationCity?.trim() || !dto.destinationArea?.trim()) {
+      throw new BadRequestException("Destination city and area are required");
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -67,12 +67,12 @@ export class RidesService {
           vehicleId: vehicle.id,
           originCity: dto.originCity.trim(),
           originArea: dto.originArea.trim(),
-          origin: dto.origin.trim(),
+          origin: dto.origin?.trim() || undefined,
           originLat: dto.originLat,
           originLng: dto.originLng,
           destinationCity: dto.destinationCity.trim(),
           destinationArea: dto.destinationArea.trim(),
-          destination: dto.destination.trim(),
+          destination: dto.destination?.trim() || undefined,
           destinationLat: dto.destinationLat,
           destinationLng: dto.destinationLng,
           departureTime,
