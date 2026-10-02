@@ -1,20 +1,22 @@
+import { IsInt, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
+
 export class CreateRideDto {
-  vehicleId!: string;
+  @IsUUID() vehicleId!: string;
 
-  originCity!: string;
-  originArea!: string;
-  origin!: string;
-  originLat?: number;
-  originLng?: number;
+  @IsString() originCity!: string;
+  @IsString() originArea!: string;
+  @IsOptional() @IsString() origin?: string;
+  @IsOptional() @IsNumber() originLat?: number;
+  @IsOptional() @IsNumber() originLng?: number;
 
-  destinationCity!: string;
-  destinationArea!: string;
-  destination!: string;
-  destinationLat?: number;
-  destinationLng?: number;
+  @IsString() destinationCity!: string;
+  @IsString() destinationArea!: string;
+  @IsOptional() @IsString() destination?: string;
+  @IsOptional() @IsNumber() destinationLat?: number;
+  @IsOptional() @IsNumber() destinationLng?: number;
 
-  departureTime!: string;
-  availableSeats!: number;
-  pricePerSeat!: number;
-  notes?: string;
+  @IsString() departureTime!: string;
+  @IsInt() @Min(1) availableSeats!: number;
+  @IsNumber() @Min(0) pricePerSeat!: number;
+  @IsOptional() @IsString() notes?: string;
 }
