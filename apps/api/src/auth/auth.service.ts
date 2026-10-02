@@ -59,7 +59,8 @@ export class AuthService {
       select: { id: true, name: true, phone: true, email: true, role: true, userType: true, isVerified: true },
     });
     await this.prisma.otpCode.delete({ where: { id: record.id } });
-    return { message: "Mobile number verified", user: updated, ...(await this.issueTokens(updated.id, updated.phone, updated.role, updated.userType)) };
+    const tokens = await this.issueTokens(updated.id, updated.phone, updated.role, updated.userType);
+    return { ...tokens, message: "Mobile number verified", user: updated };
   }
 
   async refresh(token: string) {
