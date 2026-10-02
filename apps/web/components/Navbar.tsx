@@ -10,6 +10,7 @@ const links = [
   { href: "/", label: "Publish a ride" },
   { href: "/rides", label: "My rides" },
   { href: "/bookings", label: "My bookings" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/vehicles", label: "My vehicles" },
 ];
 
