@@ -21,21 +21,47 @@ textarea { resize: vertical; }
 .arrow { font-size: 24px; text-align: center; color: #888; }
 button { margin-top: 28px; border: 0; border-radius: 12px; background: #171717; color: white; padding: 15px 22px; font-weight: 700; font-size: 15px; cursor: pointer; }
 button span { margin-left: 12px; }
+button:disabled { opacity: .55; cursor: not-allowed; }
 .message { margin: 14px 0 0; color: #555; }
-@media (max-width: 800px) {
-  .page { padding: 40px 16px 70px; }
-  .card { padding: 22px; }
-  .routeGrid { grid-template-columns: 1fr; }
-  .arrow { display: none; }
-  .fields { grid-template-columns: 1fr 1fr; }
-  .fields .wide { grid-column: span 2; }
-}
-@media (max-width: 520px) {
-  .fields { grid-template-columns: 1fr; }
-  .fields .wide { grid-column: span 1; }
-  .cardHeader { align-items: start; flex-direction: column; }
-}
-
+.textLink { color: #171717; font-weight: 700; text-decoration: none; }
+.vehicleLink { display: inline-block; margin-top: 8px; color: #555; font-size: 12px; }
+.nav { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 28px; background: rgba(244,244,241,.94); border-bottom: 1px solid #deded8; backdrop-filter: blur(12px); }
+.navBrand { color: #171717; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: .14em; }
+.navLinks { display: flex; align-items: center; gap: 8px; }
+.navLinks a, .navLogout { color: #555; text-decoration: none; padding: 9px 11px; border-radius: 9px; font-size: 13px; font-weight: 700; background: transparent; border: 0; margin: 0; }
+.navLinks a:hover, .navLinks a.active { color: #171717; background: #fff; }
+.navLogout { cursor: pointer; }
+.navToggle { display: none; margin: 0; padding: 8px 10px; }
+.dashboardHero { max-width: 720px; margin-bottom: 46px; }
+.dashboardHero h1 { font-size: clamp(48px, 7vw, 82px); letter-spacing: -.055em; margin: 14px 0; }
+.dashboardHero p { font-size: 18px; color: #666; line-height: 1.55; max-width: 600px; }
+.modeBadge, .comingSoon { display: inline-block; margin-top: 8px; padding: 7px 10px; border: 1px solid #d7d7d2; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff; }
+.dashboardGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.actionCard { min-height: 220px; padding: 28px; background: #fff; border: 1px solid #deded8; border-radius: 22px; text-decoration: none; color: #171717; transition: transform .15s ease, box-shadow .15s ease; }
+.actionCard:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.07); }
+.actionIcon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #f1f1ed; font-weight: 800; }
+.actionCard h2 { margin: 34px 0 8px; font-size: 25px; letter-spacing: -.03em; }
+.actionCard p { color: #666; line-height: 1.5; max-width: 420px; margin: 0 0 20px; }
+.actionArrow { font-size: 13px; font-weight: 700; }
+.dashboardStrip { margin-top: 16px; padding: 25px 28px; background: #171717; color: #fff; border-radius: 22px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.dashboardStrip h2 { margin: 8px 0; font-size: 22px; }
+.dashboardStrip p { color: #bbb; margin: 0; }
+.dashboardStrip .sectionLabel { color: #aaa; }
+.dashboardStrip .comingSoon { color: #171717; background: #fff; white-space: nowrap; }
+.rideResults { display: grid; gap: 12px; margin-top: 20px; }
+.rideCard { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 24px; padding: 22px; background: #fff; border: 1px solid #deded8; border-radius: 18px; }
+.rideCard h2 { font-size: 19px; margin: 8px 0; }
+.rideCard p, .rideMeta span { color: #666; font-size: 13px; }
+.rideMeta { display: grid; gap: 5px; text-align: right; }
+.rideMeta strong { font-size: 19px; }
+.profileCard { max-width: 780px; }
+.profileRow { display: flex; justify-content: space-between; gap: 20px; padding: 18px 0; border-bottom: 1px solid #eee; }
+.profileRow span { color: #777; font-size: 13px; }
+.profileRow strong { font-size: 14px; }
+.profileMode { margin-top: 34px; padding-top: 28px; border-top: 1px solid #eee; }
+.profileMode h2 { margin: 8px 0; font-size: 25px; }
+.profileMode p { color: #666; line-height: 1.5; }
+.profileMode select { max-width: 440px; }
 .authPage { min-height: 100vh; display: grid; place-items: center; padding: 40px 16px; background: #f4f4f1; }
 .authCard { width: min(100%, 480px); background: #fff; border: 1px solid #deded8; border-radius: 24px; padding: 38px; box-shadow: 0 16px 50px rgba(0,0,0,.06); }
 .brand { display: inline-block; color: #171717; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: .14em; margin-bottom: 52px; }
@@ -47,3 +73,25 @@ button span { margin-left: 12px; }
 .authFooter a { color: #171717; font-weight: 700; }
 .formError { color: #b42318; font-size: 13px; margin: 14px 0 0; }
 .devOtp { background: #f1f1ed; border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; }
+@media (max-width: 800px) {
+  .page { padding: 40px 16px 70px; }
+  .card { padding: 22px; }
+  .routeGrid { grid-template-columns: 1fr; }
+  .arrow { display: none; }
+  .fields { grid-template-columns: 1fr 1fr; }
+  .fields .wide { grid-column: span 2; }
+  .nav { padding: 15px 16px; }
+  .navToggle { display: block; }
+  .navLinks { display: none; position: absolute; top: 60px; left: 12px; right: 12px; padding: 10px; background: #fff; border: 1px solid #deded8; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,.08); flex-direction: column; align-items: stretch; }
+  .navLinks.navOpen { display: flex; }
+  .dashboardGrid { grid-template-columns: 1fr; }
+  .rideCard { grid-template-columns: 1fr; }
+  .rideMeta { text-align: left; }
+  .dashboardStrip { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 520px) {
+  .fields { grid-template-columns: 1fr; }
+  .fields .wide { grid-column: span 1; }
+  .cardHeader { align-items: start; flex-direction: column; }
+  .profileRow { flex-direction: column; gap: 6px; }
+}
