@@ -15,6 +15,7 @@ type Ride = {
   departureTime: string;
   availableSeats: number;
   pricePerSeat: number;
+  status: "ACTIVE" | "FULL" | "COMPLETED" | "CANCELLED";
   notes?: string | null;
   driver?: { name: string; phone: string };
   vehicle?: { make: string; model: string; color?: string | null; licensePlate: string; seats: number };
@@ -69,12 +70,12 @@ export default function RideDetailsPage() {
               <div className="profileRow"><span>Driver</span><strong>{ride.driver?.name ?? "—"}</strong></div>
               <div className="profileRow"><span>Vehicle</span><strong>{ride.vehicle ? `${ride.vehicle.make} ${ride.vehicle.model}` : "—"}</strong></div>
               {ride.notes && <div className="profileRow"><span>Notes</span><strong>{ride.notes}</strong></div>}
-              <div className="bookingBox">
+              {ride.status === "ACTIVE" ? <div className="bookingBox">
                 <span className="sectionLabel">BOOK THIS RIDE</span>
                 <label>Seats<input type="number" min="1" max={ride.availableSeats} value={seats} onChange={e => setSeats(Number(e.target.value))} /></label>
                 <button disabled={loading || ride.availableSeats < 1} onClick={requestBooking}>{loading ? "Sending request..." : "Request booking"} <span>→</span></button>
                 {message && <p className="message">{message}</p>}
-              </div>
+              </div> : <div className="bookingBox"><span className="sectionLabel">{ride.status}</span><p className="message">This ride is no longer available for new bookings.</p></div>}
             </section>
           </>
         )}
