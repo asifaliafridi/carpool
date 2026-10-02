@@ -30,9 +30,9 @@ enum BookingStatus {
 model User {
   id           String    @id @default(uuid())
   name         String
-  email        String    @unique
+  email        String?   @unique
   passwordHash String
-  phone        String?   @unique
+  phone        String    @unique
   role         UserRole  @default(PASSENGER)
   avatarUrl    String?
   isVerified   Boolean   @default(false)
@@ -45,31 +45,38 @@ model User {
 }
 
 model Vehicle {
-  id          String   @id @default(uuid())
-  ownerId     String
-  make        String
-  model       String
-  year        Int?
-  color       String?
-  licensePlate String  @unique
-  seats       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  ownerId      String
+  make         String
+  model        String
+  year         Int?
+  color        String?
+  licensePlate String   @unique
+  seats        Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  rides       Ride[]
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rides Ride[]
 }
 
 model Ride {
   id              String      @id @default(uuid())
   driverId        String
   vehicleId       String
+
+  originCity      String
+  originArea      String
   origin          String
-  destination     String
   originLat       Decimal?    @db.Decimal(10, 7)
   originLng       Decimal?    @db.Decimal(10, 7)
-  destinationLat  Decimal?    @db.Decimal(10, 7)
-  destinationLng  Decimal?    @db.Decimal(10, 7)
+
+  destinationCity  String
+  destinationArea  String
+  destination      String
+  destinationLat   Decimal?    @db.Decimal(10, 7)
+  destinationLng   Decimal?    @db.Decimal(10, 7)
+
   departureTime   DateTime
   availableSeats  Int
   pricePerSeat    Decimal     @db.Decimal(10, 2)
@@ -78,11 +85,13 @@ model Ride {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  driver          User        @relation("DriverRides", fields: [driverId], references: [id], onDelete: Cascade)
-  vehicle         Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
-  bookings        Booking[]
+  driver   User     @relation("DriverRides", fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  bookings Booking[]
 
-  @@index([origin, destination])
+  @@index([originCity, originArea])
+  @@index([destinationCity, destinationArea])
+  @@index([originCity, destinationCity, departureTime])
   @@index([departureTime])
   @@index([driverId])
 }
@@ -96,11 +105,12 @@ model Booking {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  ride        Ride          @relation(fields: [rideId], references: [id], onDelete: Cascade)
-  passenger   User          @relation("PassengerBookings", fields: [passengerId], references: [id], onDelete: Cascade)
+  ride      Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  passenger User @relation("PassengerBookings", fields: [passengerId], references: [id], onDelete: Cascade)
 
   @@unique([rideId, passengerId])
   @@index([passengerId])
+}
 
 model OtpCode {
   id        String   @id @default(uuid())
@@ -111,5 +121,4 @@ model OtpCode {
   createdAt DateTime @default(now())
 
   @@index([phone, expiresAt])
-}
 }
