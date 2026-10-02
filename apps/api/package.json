@@ -7,5 +7,18 @@
     "build": "nest build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "latest",
+    "@nestjs/core": "latest",
+    "reflect-metadata": "latest",
+    "rxjs": "latest"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "latest",
+    "@nestjs/schematics": "latest",
+    "@nestjs/testing": "latest",
+    "@types/node": "latest",
+    "typescript": "latest"
   }
 }
