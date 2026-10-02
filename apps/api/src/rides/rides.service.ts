@@ -12,6 +12,33 @@ import { SearchRidesDto } from "./dto/search-rides.dto.js";
 export class RidesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async completePastRides() {
+    const rides = await this.prisma.ride.findMany({
+      where: {
+        departureTime: { lte: new Date() },
+        status: { in: ["ACTIVE", "FULL"] },
+      },
+      select: { id: true },
+    });
+
+    for (const ride of rides) {
+      await this.prisma.$transaction([
+        this.prisma.ride.update({
+          where: { id: ride.id },
+          data: { status: "COMPLETED" },
+        }),
+        this.prisma.booking.updateMany({
+          where: { rideId: ride.id, status: "CONFIRMED" },
+          data: { status: "COMPLETED" },
+        }),
+        this.prisma.booking.updateMany({
+          where: { rideId: ride.id, status: "PENDING" },
+          data: { status: "CANCELLED" },
+        }),
+      ]);
+    }
+  }
+
   async createRide(userId: string, dto: CreateRideDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -27,9 +54,7 @@ export class RidesService {
       where: { id: dto.vehicleId, ownerId: userId },
     });
 
-    if (!vehicle) {
-      throw new ForbiddenException("You can only use your own vehicle");
-    }
+    if (!vehicle) throw new ForbiddenException("You can only use your own vehicle");
 
     const departureTime = new Date(dto.departureTime);
     if (Number.isNaN(departureTime.getTime()) || departureTime <= new Date()) {
@@ -42,45 +67,40 @@ export class RidesService {
     if (!Number.isInteger(availableSeats) || availableSeats < 1 || availableSeats > vehicle.seats) {
       throw new BadRequestException(`Available seats must be between 1 and ${vehicle.seats}`);
     }
-
     if (!Number.isFinite(pricePerSeat) || pricePerSeat < 0) {
       throw new BadRequestException("Price per seat must be a valid non-negative amount");
     }
-
     if (!dto.originCity?.trim() || !dto.originArea?.trim()) {
       throw new BadRequestException("Origin city and area are required");
     }
-
     if (!dto.destinationCity?.trim() || !dto.destinationArea?.trim()) {
       throw new BadRequestException("Destination city and area are required");
     }
 
     return this.prisma.ride.create({
-        data: {
-          driverId: userId,
-          vehicleId: vehicle.id,
-          originCity: dto.originCity.trim(),
-          originArea: dto.originArea.trim(),
-          origin: dto.origin?.trim() || undefined,
-          originLat: dto.originLat,
-          originLng: dto.originLng,
-          destinationCity: dto.destinationCity.trim(),
-          destinationArea: dto.destinationArea.trim(),
-          destination: dto.destination?.trim() || undefined,
-          destinationLat: dto.destinationLat,
-          destinationLng: dto.destinationLng,
-          departureTime,
-          availableSeats,
-          pricePerSeat,
-          notes: dto.notes?.trim() || undefined,
-        },
-        include: {
-          vehicle: true,
-          driver: {
-            select: { id: true, name: true, phone: true, avatarUrl: true },
-          },
-        },
-      });
+      data: {
+        driverId: userId,
+        vehicleId: vehicle.id,
+        originCity: dto.originCity.trim(),
+        originArea: dto.originArea.trim(),
+        origin: dto.origin?.trim() || undefined,
+        originLat: dto.originLat,
+        originLng: dto.originLng,
+        destinationCity: dto.destinationCity.trim(),
+        destinationArea: dto.destinationArea.trim(),
+        destination: dto.destination?.trim() || undefined,
+        destinationLat: dto.destinationLat,
+        destinationLng: dto.destinationLng,
+        departureTime,
+        availableSeats,
+        pricePerSeat,
+        notes: dto.notes?.trim() || undefined,
+      },
+      include: {
+        vehicle: true,
+        driver: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+      },
+    });
   }
 
   async searchRides(dto: SearchRidesDto) {
@@ -89,18 +109,10 @@ export class RidesService {
       departureTime: { gte: new Date() },
     };
 
-    if (dto.originCity?.trim()) {
-      where.originCity = { contains: dto.originCity.trim(), mode: "insensitive" };
-    }
-    if (dto.originArea?.trim()) {
-      where.originArea = { contains: dto.originArea.trim(), mode: "insensitive" };
-    }
-    if (dto.destinationCity?.trim()) {
-      where.destinationCity = { contains: dto.destinationCity.trim(), mode: "insensitive" };
-    }
-    if (dto.destinationArea?.trim()) {
-      where.destinationArea = { contains: dto.destinationArea.trim(), mode: "insensitive" };
-    }
+    if (dto.originCity?.trim()) where.originCity = { contains: dto.originCity.trim(), mode: "insensitive" };
+    if (dto.originArea?.trim()) where.originArea = { contains: dto.originArea.trim(), mode: "insensitive" };
+    if (dto.destinationCity?.trim()) where.destinationCity = { contains: dto.destinationCity.trim(), mode: "insensitive" };
+    if (dto.destinationArea?.trim()) where.destinationArea = { contains: dto.destinationArea.trim(), mode: "insensitive" };
 
     if (dto.seats !== undefined) {
       const seats = Number(dto.seats);
@@ -113,9 +125,7 @@ export class RidesService {
     if (dto.date) {
       const start = new Date(`${dto.date}T00:00:00`);
       const end = new Date(`${dto.date}T23:59:59.999`);
-      if (Number.isNaN(start.getTime())) {
-        throw new BadRequestException("Invalid date");
-      }
+      if (Number.isNaN(start.getTime())) throw new BadRequestException("Invalid date");
       where.departureTime = { gte: start, lte: end };
     }
 
@@ -124,14 +134,13 @@ export class RidesService {
       orderBy: { departureTime: "asc" },
       include: {
         vehicle: true,
-        driver: {
-          select: { id: true, name: true, avatarUrl: true },
-        },
+        driver: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
   }
 
   async getMyRides(userId: string) {
+    await this.completePastRides();
     return this.prisma.ride.findMany({
       where: { driverId: userId },
       orderBy: { departureTime: "desc" },
@@ -140,38 +149,48 @@ export class RidesService {
   }
 
   async getRide(id: string) {
+    await this.completePastRides();
     const ride = await this.prisma.ride.findUnique({
       where: { id },
       include: {
         vehicle: true,
-        driver: {
-          select: { id: true, name: true, phone: true, avatarUrl: true },
-        },
-        bookings: {
-          select: {
-            id: true,
-            passengerId: true,
-            seats: true,
-            status: true,
-          },
-        },
+        driver: { select: { id: true, name: true, phone: true, avatarUrl: true } },
+        bookings: { select: { id: true, passengerId: true, seats: true, status: true } },
       },
     });
-
     if (!ride) throw new NotFoundException("Ride not found");
     return ride;
   }
 
+  async cancelRide(userId: string, rideId: string) {
+    await this.completePastRides();
+    return this.prisma.$transaction(async (tx) => {
+      const ride = await tx.ride.findUnique({
+        where: { id: rideId },
+        include: { bookings: { select: { id: true, status: true } } },
+      });
+      if (!ride) throw new NotFoundException("Ride not found");
+      if (ride.driverId !== userId) throw new ForbiddenException("Only the driver can cancel this ride");
+      if (ride.departureTime <= new Date()) throw new BadRequestException("A ride cannot be cancelled after departure");
+      if (ride.status === "CANCELLED") return ride;
+      if (ride.status === "COMPLETED") throw new BadRequestException("Completed rides cannot be cancelled");
+
+      await tx.booking.updateMany({
+        where: { rideId, status: { in: ["PENDING", "CONFIRMED"] } },
+        data: { status: "CANCELLED" },
+      });
+
+      return tx.ride.update({
+        where: { id: rideId },
+        data: { status: "CANCELLED" },
+        include: { vehicle: true },
+      });
+    });
+  }
+
   async createVehicle(
     userId: string,
-    input: {
-      make: string;
-      model: string;
-      year?: number;
-      color?: string;
-      licensePlate: string;
-      seats: number;
-    },
+    input: { make: string; model: string; year?: number; color?: string; licensePlate: string; seats: number },
   ) {
     const seats = Number(input.seats);
     if (!input.make?.trim() || !input.model?.trim() || !input.licensePlate?.trim()) {
@@ -195,9 +214,6 @@ export class RidesService {
   }
 
   async getMyVehicles(userId: string) {
-    return this.prisma.vehicle.findMany({
-      where: { ownerId: userId },
-      orderBy: { createdAt: "desc" },
-    });
+    return this.prisma.vehicle.findMany({ where: { ownerId: userId }, orderBy: { createdAt: "desc" } });
   }
 }
