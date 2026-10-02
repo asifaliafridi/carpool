@@ -54,8 +54,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user) throw new UnauthorizedException("User not found");
     const updated = await this.prisma.user.update({
-      where: { id: user.id }, data: { isVerified: true },
-      select: { id: true, name: true, phone: true, email: true, role: true, isVerified: true },
+      where: { id: user.id },
+      data: { isVerified: true },
+      select: { id: true, name: true, phone: true, email: true, role: true, userType: true, isVerified: true },
     });
     await this.prisma.otpCode.delete({ where: { id: record.id } });
     return { message: "Mobile number verified", user: updated, ...(await this.issueTokens(updated.id, updated.phone, updated.role, updated.userType)) };
@@ -63,12 +64,17 @@ export class AuthService {
 
   async refresh(token: string) {
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string; phone: string; role: string; jti?: string }>(token);
+      const payload = await this.jwtService.verifyAsync<{ sub: string; jti?: string }>(token);
       const tokenHash = this.hashToken(token);
       const stored = await this.prisma.refreshToken.findFirst({ where: { tokenHash, userId: payload.sub, revokedAt: null } });
       if (!stored || stored.expiresAt < new Date()) throw new UnauthorizedException("Refresh token expired or revoked");
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, phone: true, role: true, userType: true, isVerified: true },
+      });
+      if (!user || !user.isVerified) throw new UnauthorizedException("User not found or not verified");
       await this.prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
-      return this.issueTokens(payload.sub, payload.phone, payload.role);
+      return this.issueTokens(user.id, user.phone, user.role, user.userType);
     } catch { throw new UnauthorizedException("Invalid refresh token"); }
   }
 
