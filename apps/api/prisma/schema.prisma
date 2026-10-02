@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  DRIVER
+  PASSENGER
+  ADMIN
+}
+
+enum RideStatus {
+  ACTIVE
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  phone        String?   @unique
+  role         UserRole  @default(PASSENGER)
+  avatarUrl    String?
+  isVerified   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  vehicles     Vehicle[]
+  rides        Ride[]    @relation("DriverRides")
+  bookings     Booking[] @relation("PassengerBookings")
+}
+
+model Vehicle {
+  id          String   @id @default(uuid())
+  ownerId     String
+  make        String
+  model       String
+  year        Int?
+  color       String?
+  licensePlate String  @unique
+  seats       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rides       Ride[]
+}
+
+model Ride {
+  id              String      @id @default(uuid())
+  driverId        String
+  vehicleId       String
+  origin          String
+  destination     String
+  originLat       Decimal?    @db.Decimal(10, 7)
+  originLng       Decimal?    @db.Decimal(10, 7)
+  destinationLat  Decimal?    @db.Decimal(10, 7)
+  destinationLng  Decimal?    @db.Decimal(10, 7)
+  departureTime   DateTime
+  availableSeats  Int
+  pricePerSeat    Decimal     @db.Decimal(10, 2)
+  status          RideStatus  @default(ACTIVE)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  driver          User        @relation("DriverRides", fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle         Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  bookings        Booking[]
+
+  @@index([origin, destination])
+  @@index([departureTime])
+  @@index([driverId])
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  rideId      String
+  passengerId String
+  seats       Int           @default(1)
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  ride        Ride          @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  passenger   User          @relation("PassengerBookings", fields: [passengerId], references: [id], onDelete: Cascade)
+
+  @@unique([rideId, passengerId])
+  @@index([passengerId])
+}
