@@ -101,4 +101,15 @@ model Booking {
 
   @@unique([rideId, passengerId])
   @@index([passengerId])
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone, expiresAt])
+}
 }
