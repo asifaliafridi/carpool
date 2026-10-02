@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import type { Request } from "express";
 
 export type AuthenticatedRequest = Request & {
-  user: { sub: string; phone: string; role: string };
+  user: { sub: string; phone: string; role: string; userType: string };
 };
 
 @Injectable()
