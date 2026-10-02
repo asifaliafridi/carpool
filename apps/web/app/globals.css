@@ -35,3 +35,15 @@ button span { margin-left: 12px; }
   .fields .wide { grid-column: span 1; }
   .cardHeader { align-items: start; flex-direction: column; }
 }
+
+.authPage { min-height: 100vh; display: grid; place-items: center; padding: 40px 16px; background: #f4f4f1; }
+.authCard { width: min(100%, 480px); background: #fff; border: 1px solid #deded8; border-radius: 24px; padding: 38px; box-shadow: 0 16px 50px rgba(0,0,0,.06); }
+.brand { display: inline-block; color: #171717; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: .14em; margin-bottom: 52px; }
+.authCard h1 { font-size: 46px; letter-spacing: -.05em; margin: 10px 0 10px; }
+.authIntro { color: #666; line-height: 1.5; margin: 0 0 28px; }
+.authForm label { margin-top: 16px; }
+.authForm button { width: 100%; }
+.authFooter { text-align: center; color: #666; font-size: 14px; margin: 24px 0 0; }
+.authFooter a { color: #171717; font-weight: 700; }
+.formError { color: #b42318; font-size: 13px; margin: 14px 0 0; }
+.devOtp { background: #f1f1ed; border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; }
