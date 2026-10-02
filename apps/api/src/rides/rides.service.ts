@@ -165,35 +165,37 @@ export class RidesService {
 
   async cancelRide(userId: string, rideId: string) {
     await this.completePastRides();
+
     const result = await this.prisma.$transaction(async (tx) => {
       const ride = await tx.ride.findUnique({
         where: { id: rideId },
-        include: { bookings: { select: { id: true, status: true } } },
+        include: { bookings: { select: { passengerId: true, status: true } } },
       });
       if (!ride) throw new NotFoundException("Ride not found");
       if (ride.driverId !== userId) throw new ForbiddenException("Only the driver can cancel this ride");
       if (ride.departureTime <= new Date()) throw new BadRequestException("A ride cannot be cancelled after departure");
-      if (ride.status === "CANCELLED") return ride;
+      if (ride.status === "CANCELLED") return { ride, passengerIds: [] as string[] };
       if (ride.status === "COMPLETED") throw new BadRequestException("Completed rides cannot be cancelled");
+
+      const passengerIds = ride.bookings
+        .filter((booking) => booking.status === "PENDING" || booking.status === "CONFIRMED")
+        .map((booking) => booking.passengerId);
 
       await tx.booking.updateMany({
         where: { rideId, status: { in: ["PENDING", "CONFIRMED"] } },
         data: { status: "CANCELLED" },
       });
 
-      return tx.ride.update({
+      const updatedRide = await tx.ride.update({
         where: { id: rideId },
         data: { status: "CANCELLED" },
         include: { vehicle: true },
       });
+
+      return { ride: updatedRide, passengerIds };
     });
 
-    const passengerIds = (await this.prisma.booking.findMany({
-      where: { rideId, status: "CANCELLED" },
-      select: { passengerId: true },
-    })).map((booking) => booking.passengerId);
-
-    await Promise.all([...new Set(passengerIds)].map((passengerId) =>
+    await Promise.all([...new Set(result.passengerIds)].map((passengerId) =>
       this.notifications.create(
         passengerId,
         "RIDE_CANCELLED",
@@ -202,7 +204,7 @@ export class RidesService {
       ),
     ));
 
-    return result;
+    return result.ride;
   }
 
   async createVehicle(
