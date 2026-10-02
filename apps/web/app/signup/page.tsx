@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [userType, setUserType] = useState<"DRIVER" | "RIDER" | "BOTH">("RIDER");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +42,7 @@ export default function SignupPage() {
       setLoading(true);
       const result = await apiRequest<SignupResponse>("/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ name, phone, email: email || undefined, password }),
+        body: JSON.stringify({ name, phone, email: email || undefined, password, userType }),
       });
 
       const params = new URLSearchParams({ phone });
@@ -62,10 +63,10 @@ export default function SignupPage() {
         <Link href="/" className="brand">CARPOOL</Link>
         <span className="sectionLabel">GET STARTED</span>
         <h1>Create account</h1>
-        <p className="authIntro">Create your account to publish rides and book seats.</p>
+        <p className="authIntro">Choose how you want to use Carpool. You can change this later.</p>
 
         <form onSubmit={submit} className="authForm">
-          <label>Full name *<input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" /></label>
+          <label>How will you use Carpool? *<select value={userType} onChange={(e) => setUserType(e.target.value as "DRIVER" | "RIDER" | "BOTH")}><option value="RIDER">I want to find rides</option><option value="DRIVER">I want to offer rides</option><option value="BOTH">Both — offer and find rides</option></select></label>\n          <label>Full name *<input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoComplete="name" /></label>
           <label>Mobile number *<input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0300 1234567" autoComplete="tel" /></label>
           <label>Email <span>(optional)</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" /></label>
           <label>Password *<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" /></label>
