@@ -21,7 +21,9 @@
     "pg": "latest",
     "reflect-metadata": "latest",
     "rxjs": "latest",
-    "@nestjs/jwt": "latest"
+    "@nestjs/jwt": "latest",
+    "class-validator": "latest",
+    "class-transformer": "latest"
   },
   "devDependencies": {
     "@nestjs/cli": "latest",
