@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma.service.js";
-import { randomInt, randomUUID } from "node:crypto";
-import { createHash, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomInt, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 
 type SignupInput = {
   name: string;
@@ -22,7 +22,10 @@ type OtpInput = {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async signup(input: SignupInput) {
     const phone = input.phone.trim();
@@ -33,7 +36,6 @@ export class AuthService {
     }
 
     const passwordHash = this.hashPassword(input.password);
-
     const user = await this.prisma.user.create({
       data: {
         name: input.name.trim(),
@@ -80,21 +82,10 @@ export class AuthService {
       };
     }
 
-    return {
-      message: "Login successful",
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    return this.issueTokens(user.id, user.phone, user.role);
   }
 
   async verifyOtp(input: OtpInput) {
-    // Temporary development implementation.
-    // Production OTP delivery/storage will be added with an SMS provider.
     if (!/^\d{6}$/.test(input.otp)) {
       throw new UnauthorizedException("Invalid OTP");
     }
@@ -123,6 +114,27 @@ export class AuthService {
     return {
       message: "Mobile number verified",
       user: updated,
+      ...(await this.issueTokens(updated.id, updated.phone, updated.role)),
+    };
+  }
+
+  private async issueTokens(userId: string, phone: string, role: string) {
+    const payload = { sub: userId, phone, role };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: "15m",
+    });
+
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: "30d",
+    });
+
+    return {
+      message: "Authentication successful",
+      accessToken,
+      refreshToken,
+      tokenType: "Bearer",
+      expiresIn: 900,
     };
   }
 
@@ -135,9 +147,7 @@ export class AuthService {
   private verifyPassword(password: string, stored: string) {
     const [salt, storedHash] = stored.split(":");
 
-    if (!salt || !storedHash) {
-      return false;
-    }
+    if (!salt || !storedHash) return false;
 
     const hash = scryptSync(password, salt, 64);
     const expected = Buffer.from(storedHash, "hex");
