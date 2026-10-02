@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
+import { apiRequest } from "../lib/api";
 
 const cities = ["Peshawar", "Islamabad", "Rawalpindi", "Lahore", "Karachi"];
 
@@ -13,21 +15,39 @@ export default function HomePage() {
   const [time, setTime] = useState("");
   const [seats, setSeats] = useState("1");
   const [price, setPrice] = useState("");
-  const [vehicle, setVehicle] = useState("");
+  const [vehicleId, setVehicleId] = useState("");
+  const [vehicles, setVehicles] = useState<Array<{ id: string; make: string; model: string; licensePlate: string; seats: number }>>([]);
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("carpool_access_token");
+    if (!token) { setLoadingVehicles(false); return; }
+    apiRequest<typeof vehicles>("/rides/vehicles/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((items) => { setVehicles(items); if (items[0]) setVehicleId(items[0].id); })
+      .catch(() => {})
+      .finally(() => setLoadingVehicles(false));
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!fromCity || !fromArea || !toCity || !toArea || !date || !time || !seats || !price || !vehicle) {
+    if (!fromCity || !fromArea || !toCity || !toArea || !date || !time || !seats || !price || !vehicleId) {
       setMessage("Please complete all required fields.");
       return;
     }
 
-    setMessage(
-      `Ride ready: ${fromArea}, ${fromCity} → ${toArea}, ${toCity} on ${date} at ${time}.`,
-    );
+    const token = localStorage.getItem("carpool_access_token");
+    if (!token) { setMessage("Please sign in before publishing a ride."); return; }
+    try {
+      const result = await apiRequest<{ id: string }>("/rides", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ vehicleId, originCity: fromCity, originArea: fromArea, destinationCity: toCity, destinationArea: toArea, departureTime: `${date}T${time}`, availableSeats: Number(seats), pricePerSeat: Number(price), notes: notes || undefined }),
+      });
+      setMessage(`Ride published successfully. Ride ID: ${result.id}`);
+    } catch (err) { setMessage(err instanceof Error ? err.message : "Unable to publish ride."); }
   }
 
   return (
@@ -96,7 +116,7 @@ export default function HomePage() {
           </div>
 
           <div className="fields">
-            <label className="wide">Vehicle *<input value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="Toyota Corolla — ABC-123" /></label>
+            <label className="wide">Vehicle *<select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} disabled={loadingVehicles || vehicles.length === 0}><option value="">{loadingVehicles ? "Loading vehicles..." : "Select your vehicle"}</option>{vehicles.map((item) => <option key={item.id} value={item.id}>{item.make} {item.model} — {item.licensePlate} ({item.seats} seats)</option>)}</select>{!loadingVehicles && vehicles.length === 0 && <Link href="/vehicles" className="vehicleLink">Add a vehicle first →</Link>}</label>
             <label className="wide">Notes <span>(optional)</span><textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Motorway se jaunga" rows={3} /></label>
           </div>
 
