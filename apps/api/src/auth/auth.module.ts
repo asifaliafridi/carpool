@@ -9,6 +9,6 @@ import { PrismaService } from "../prisma.service.js";
   imports: [JwtModule.register({ secret: process.env.JWT_SECRET ?? "development-only-secret" })],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, PrismaService],
-  exports: [JwtAuthGuard],
+  exports: [JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}
