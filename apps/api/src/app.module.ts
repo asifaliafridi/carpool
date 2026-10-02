@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { AuthModule } from "./auth/auth.module.js";
+import { RidesModule } from "./rides/rides.module.js";
 import { PrismaService } from "./prisma.service.js";
 
 @Module({
@@ -10,6 +11,7 @@ import { PrismaService } from "./prisma.service.js";
       signOptions: { expiresIn: "15m" },
     }),
     AuthModule,
+    RidesModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],
