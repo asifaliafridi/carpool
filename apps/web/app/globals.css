@@ -120,3 +120,11 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .bookingRequest { align-items: flex-start; flex-direction: column; }
   .bookingActions { justify-content: flex-start; }
 }
+
+.notificationList { display: grid; gap: 12px; margin-top: 20px; }
+.notificationCard { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px; background: #fff; border: 1px solid #deded8; border-radius: 18px; }
+.notificationCard.unread { border-color: #171717; }
+.notificationCard h2 { margin: 8px 0; font-size: 19px; }
+.notificationCard p { margin: 0 0 8px; color: #555; line-height: 1.5; }
+.notificationCard small { color: #888; }
+@media (max-width: 800px) { .notificationCard { align-items: flex-start; flex-direction: column; } }
