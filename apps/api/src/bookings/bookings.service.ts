@@ -1,9 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly notifications: NotificationsService) {}
 
   private async completePastRides() {
     const now = new Date();
@@ -40,7 +41,7 @@ export class BookingsService {
 
     await this.completePastRides();
 
-    return this.prisma.$transaction(async (tx) => {
+    const bookingResult = await this.prisma.$transaction(async (tx) => {
       const ride = await tx.ride.findUnique({ where: { id: rideId } });
       if (!ride) throw new NotFoundException("Ride not found");
       if (ride.driverId === userId) throw new BadRequestException("You cannot book your own ride");
@@ -76,6 +77,17 @@ export class BookingsService {
         },
       });
     });
+
+    if (bookingResult) {
+      await this.notifications.create(
+        bookingResult.ride.driver.id,
+        "BOOKING_REQUEST",
+        "New booking request",
+        `${bookingResult.ride.driver.name} has received a new booking request from a rider.`,
+      );
+    }
+
+    return bookingResult;
   }
 
   async getMyBookings(userId: string) {
@@ -118,7 +130,7 @@ export class BookingsService {
   async updateBooking(userId: string, bookingId: string, status: "CONFIRMED" | "CANCELLED") {
     await this.completePastRides();
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { id: bookingId },
         include: { ride: true },
@@ -192,5 +204,33 @@ export class BookingsService {
         data: { status: "CANCELLED" },
       });
     });
+
+    if (status === "CONFIRMED") {
+      await this.notifications.create(
+        (await this.prisma.booking.findUnique({ where: { id: bookingId }, select: { passengerId: true } }))!.passengerId,
+        "BOOKING_CONFIRMED",
+        "Booking confirmed",
+        "Your booking has been confirmed by the driver.",
+      );
+    } else if (result.status === "CANCELLED" && result.passengerId !== userId) {
+      await this.notifications.create(
+        result.passengerId,
+        "BOOKING_CANCELLED",
+        "Booking cancelled",
+        "Your booking was cancelled by the driver.",
+      );
+    } else if (result.status === "CANCELLED" && result.passengerId === userId) {
+      const ride = await this.prisma.ride.findUnique({ where: { id: result.rideId }, select: { driverId: true } });
+      if (ride) {
+        await this.notifications.create(
+          ride.driverId,
+          "BOOKING_CANCELLED",
+          "Booking cancelled",
+          "A rider cancelled their booking.",
+        );
+      }
+    }
+
+    return result;
   }
 }
