@@ -31,7 +31,7 @@ export default function BookingsPage() {
     if (!token) { window.location.href = "/login"; return; }
     try {
       setBookings(await apiRequest<Booking[]>("/bookings/me", {
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
       }));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Unable to load bookings.");
@@ -44,9 +44,9 @@ export default function BookingsPage() {
     const token = localStorage.getItem("carpool_access_token");
     if (!token) return;
     try {
-      await apiRequest(\`/bookings/\${id}/status\`, {
+      await apiRequest(`/bookings/${id}/status`, {
         method: "POST",
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: "CANCELLED" }),
       });
       await load();
@@ -62,7 +62,7 @@ export default function BookingsPage() {
     return (
       <article className="rideCard">
         <div>
-          <span className={\`statusPill status-\${booking.status.toLowerCase()}\`}>{booking.status}</span>
+          <span className={`statusPill status-${booking.status.toLowerCase()}`}>{booking.status}</span>
           <h2>{booking.ride.originCity}, {booking.ride.originArea} → {booking.ride.destinationCity}, {booking.ride.destinationArea}</h2>
           <p>{new Date(booking.ride.departureTime).toLocaleString()} · {booking.seats} seat{booking.seats > 1 ? "s" : ""} · {booking.ride.driver?.name ?? "Driver"}</p>
         </div>
@@ -74,7 +74,7 @@ export default function BookingsPage() {
         {booking.status === "PENDING" || booking.status === "CONFIRMED" ? (
           <button className="secondaryButton" onClick={() => cancel(booking.id)}>Cancel</button>
         ) : (
-          <Link href={\`/rides/\${booking.ride.id}\`} className="actionButton">View ride →</Link>
+          <Link href={`/rides/${booking.ride.id}`} className="actionButton">View ride →</Link>
         )}
       </article>
     );
