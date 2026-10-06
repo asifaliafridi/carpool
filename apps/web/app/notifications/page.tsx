@@ -22,7 +22,7 @@ export default function NotificationsPage() {
     if (!token) { window.location.href = "/login?redirect=/notifications"; return; }
     try {
       const data = await apiRequest<Notification[]>("/notifications", {
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setItems(data);
       setMessage(data.length ? "" : "You have no notifications yet.");
@@ -37,9 +37,9 @@ export default function NotificationsPage() {
     const token = localStorage.getItem("carpool_access_token");
     if (!token) return;
     try {
-      await apiRequest(\`/notifications/\${id}/read\`, {
+      await apiRequest(`/notifications/${id}/read`, {
         method: "PATCH",
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setItems((current) => current.map((item) => item.id === id ? { ...item, isRead: true } : item));
     } catch (err) {
@@ -59,7 +59,7 @@ export default function NotificationsPage() {
         {message && <section className="card"><p className="message">{message}</p></section>}
         <section className="notificationList">
           {items.map((item) => (
-            <article key={item.id} className={\`notificationCard \${item.isRead ? "read" : "unread"}\`}>
+            <article key={item.id} className={`notificationCard ${item.isRead ? "read" : "unread"}`}>
               <div>
                 <span className="sectionLabel">{item.type.replaceAll("_", " ")}</span>
                 <h2>{item.title}</h2>
