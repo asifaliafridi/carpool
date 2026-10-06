@@ -32,7 +32,7 @@ export default function MyRidesPage() {
     if (!token) { window.location.href = "/login?redirect=/rides"; return; }
     try {
       const data = await apiRequest<Ride[]>("/rides/me/list", {
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setRides(data);
       setMessage(data.length ? "" : "You have not published any rides yet.");
@@ -50,9 +50,9 @@ export default function MyRidesPage() {
     setBusyId(id);
     setMessage("");
     try {
-      await apiRequest(\`/rides/\${id}/status\`, {
+      await apiRequest(`/rides/${id}/status`, {
         method: "POST",
-        headers: { Authorization: \`Bearer \${token}\` },
+        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: "CANCELLED" }),
       });
       await load();
@@ -70,17 +70,17 @@ export default function MyRidesPage() {
     return (
       <article className="rideCard">
         <div>
-          <span className={\`statusPill status-\${ride.status.toLowerCase()}\`}>{statusLabel[ride.status]}</span>
+          <span className={`statusPill status-${ride.status.toLowerCase()}`}>{statusLabel[ride.status]}</span>
           <h2>{ride.originCity} → {ride.destinationCity}</h2>
           <p>{ride.originArea} to {ride.destinationArea}</p>
-          <p>{new Date(ride.departureTime).toLocaleString()} · {ride.vehicle ? \`\${ride.vehicle.make} \${ride.vehicle.model}\` : "Vehicle"}</p>
+          <p>{new Date(ride.departureTime).toLocaleString()} · {ride.vehicle ? `${ride.vehicle.make} ${ride.vehicle.model}` : "Vehicle"}</p>
         </div>
         <div className="rideMeta">
           <strong>{ride.availableSeats}</strong><span>seats left</span>
           <strong>PKR {ride.pricePerSeat}</strong><span>per seat</span>
         </div>
         <div className="rideActions">
-          <Link href={\`/rides/\${ride.id}/bookings\`} className="actionButton">Booking requests →</Link>
+          <Link href={`/rides/${ride.id}/bookings`} className="actionButton">Booking requests →</Link>
           {(ride.status === "ACTIVE" || ride.status === "FULL") && (
             <button className="secondaryButton" disabled={busyId === ride.id} onClick={() => cancelRide(ride.id)}>
               {busyId === ride.id ? "Cancelling..." : "Cancel ride"}
