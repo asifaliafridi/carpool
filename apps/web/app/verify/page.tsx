@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiRequest, saveAuthTokens } from "../../lib/api";
 
@@ -10,7 +10,7 @@ type VerifyResponse = {
   refreshToken: string;
 };
 
-export default function VerifyPage() {
+function VerifyContent() {
   const params = useSearchParams();
   const phone = params.get("phone") ?? "";
   const devOtp = params.get("devOtp") ?? "";
@@ -66,5 +66,13 @@ export default function VerifyPage() {
         <p className="authFooter"><Link href="/login">Back to sign in</Link></p>
       </div>
     </main>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<main className="authPage"><div className="authCard">Loading...</div></main>}>
+      <VerifyContent />
+    </Suspense>
   );
 }
